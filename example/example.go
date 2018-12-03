@@ -1,8 +1,9 @@
 package main
 
 import (
-	"dim"
 	"fmt"
+
+	"github.com/sunho/dim"
 
 	"github.com/labstack/echo"
 )
@@ -27,10 +28,10 @@ func (p *PrintService) Print(str string) {
 
 // creator function
 // conf will be provided by Dim
-func providePrintService(conf PrintServiceConf) *PrintService {
+func providePrintService(conf PrintServiceConf) (*PrintService, error) {
 	return &PrintService{
 		test: conf.Test,
-	}
+	}, nil
 }
 
 type LogService struct {

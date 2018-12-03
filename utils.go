@@ -1,7 +1,6 @@
 package dim
 
 import (
-	"errors"
 	"reflect"
 )
 
@@ -10,7 +9,7 @@ func parseFactory(factory interface{}) (reflect.Type, reflect.Type) {
 	if typ.NumIn() > 1 || typ.NumOut() > 2 || typ.NumOut() == 0 {
 		panic("Invalid factory function")
 	}
-	if typ.NumOut() == 2 && typ.Out(1) != reflect.TypeOf(errors.New("")) {
+	if typ.NumOut() == 2 && typ.Out(1) != reflect.TypeOf((*error)(nil)).Elem() {
 		panic("Invalid factory function")
 	}
 	if typ.NumIn() == 0 {
