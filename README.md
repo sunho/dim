@@ -1,3 +1,20 @@
+# Introduction
+
+Dim wraps echo to provide the dependecy injection for go web development.
+
+# Features
+
+## Easily configurable service
+
+The service instances are created by a function you implement. The function can take a yaml deserializable struct to configure your services. When you call Dim.Init(path), Dim will read yaml files from the path, unmarshal them as the struct parameter of your function and use them to call your function.
+
+## TODO
+
+# Examples
+
+## Service Configuration
+
+```go
 package main
 
 import (
@@ -34,12 +51,12 @@ func providePrintService(conf PrintServiceConf) *PrintService {
 }
 
 type LogService struct {
-	PrintService *PrintService `dim:"on"` // will be injected by Dim
-	// dim:"on" will trigger Dim to inject
+    PrintService *PrintService `dim:"on"` // will be injected by Dim
+    // dim:"on" will trigger Dim to inject
 }
 
 func (l *LogService) Log(str string) {
-	// use the injected service
+    // use the injected service
 	l.PrintService.Print(str)
 }
 
@@ -64,25 +81,26 @@ func (l *LogRoute) get(e echo.Context) error {
 }
 
 func main() {
-	d := dim.New()
+    d := dim.New()
 
-	// register service creator functions
+    // register service creator functions
 	d.Provide(provideLogService)
-	d.Provide(providePrintService)
+    d.Provide(providePrintService)
 
-	// create service instances
-	// unmarshal yaml files from config folder
-	// and provide them to creator functions
-	err := d.Init("config")
+    // create service instances
+    // unmarshal yaml files from config folder 
+    // and provide them to creator functions
+    err := d.Init("config")
 	if err != nil {
 		panic(err)
-	}
+    }
 
-	// register routes
+    // register routes
 	d.Register(func(g *dim.Group) {
 		g.Route("/log", &LogRoute{})
-	})
+    })
 
-	// start http server
+    // start http server
 	d.Start(":8080")
 }
+```
