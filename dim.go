@@ -23,14 +23,6 @@ func New() *Dim {
 	}
 }
 
-func (d *Dim) Provide(factory interface{}) {
-	serv, _ := parseFactory(factory)
-	if _, ok := d.factories[serv]; ok {
-		panic("Duplicate factory func")
-	}
-	d.factories[serv] = factory
-}
-
 func (d *Dim) Init(path string) error {
 	servs := map[reflect.Type]interface{}{}
 	for _, factory := range d.factories {
@@ -63,7 +55,7 @@ func (d *Dim) Init(path string) error {
 	}
 	d.servs = servs
 	for _, serv := range servs {
-		d.injectServ(serv)
+		d.inject(serv)
 	}
 
 	for _, serv := range servs {
@@ -75,8 +67,25 @@ func (d *Dim) Init(path string) error {
 	return nil
 }
 
-func (d *Dim) injectServ(serv interface{}) {
-	typ := reflect.TypeOf(serv).Elem()
+func (d *Dim) Register(register RegisterFunc) {
+	t := newGroup(d, d.e.Group(""))
+	register(t)
+}
+
+func (d *Dim) Provide(factory interface{}) {
+	serv, _ := parseFactory(factory)
+	if _, ok := d.factories[serv]; ok {
+		panic("Duplicate factory func")
+	}
+	d.factories[serv] = factory
+}
+
+func (d *Dim) Start(addr string) error {
+	return d.e.Start(addr)
+}
+
+func (d *Dim) inject(bean interface{}) {
+	typ := reflect.TypeOf(bean).Elem()
 
 	toinject := map[int]reflect.Type{}
 	for i := 0; i < typ.NumField(); i++ {
@@ -86,7 +95,7 @@ func (d *Dim) injectServ(serv interface{}) {
 		}
 	}
 
-	val := reflect.ValueOf(serv).Elem()
+	val := reflect.ValueOf(bean).Elem()
 	for val2, serv := range toinject {
 		serv2, ok := d.servs[serv]
 		if !ok {

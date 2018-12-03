@@ -3,38 +3,56 @@ package main
 import (
 	"dim"
 	"fmt"
+
+	"github.com/labstack/echo"
 )
 
-type Service2 struct {
-	S    *Service1 `dim:"on"`
-	asdf string
+type PrintService struct {
 }
 
-func (s *Service2) Hoi() {
-	s.asdf = "1234"
-	fmt.Println("asdfsaf")
+func (p *PrintService) Print(str string) {
+	fmt.Println(str)
 }
 
-type Service1 struct {
-	S *Service2 `dim:"on"`
+type LogService struct {
+	PrintService *PrintService `dim:"on"`
 }
 
-func (s *Service1) Init() error {
-	s.S.Hoi()
-	return nil
+func (l *LogService) Log(str string) {
+	l.PrintService.Print(str)
 }
 
-func provide1() *Service1 {
-	return &Service1{}
+func providePrintService() *PrintService {
+	return &PrintService{}
 }
 
-func provide2() *Service2 {
-	return &Service2{}
+func provideLogService() *LogService {
+	return &LogService{}
+}
+
+type LogRoute struct {
+	LogService *LogService `dim:"on"`
+}
+
+func (l *LogRoute) Register(g *dim.Group) {
+	g.GET("/", l.post)
+}
+
+func (l *LogRoute) post(e echo.Context) error {
+	l.LogService.Log("Hello Dim!")
+	return e.String(200, "asdf")
 }
 
 func main() {
 	d := dim.New()
-	d.Provide(provide1)
-	d.Provide(provide2)
-	d.Init("")
+	d.Provide(provideLogService)
+	d.Provide(providePrintService)
+	err := d.Init("")
+	if err != nil {
+		panic(err)
+	}
+	d.Register(func(g *dim.Group) {
+		g.Route("/log", &LogRoute{})
+	})
+	d.Start(":8080")
 }
