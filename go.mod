@@ -1,4 +1,4 @@
-module dim
+module github.com/sunho/dim
 
 require (
 	github.com/labstack/echo v3.3.5+incompatible
