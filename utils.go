@@ -20,13 +20,13 @@ func parseFactory(factory interface{}) (reflect.Type, reflect.Type) {
 }
 
 func getConfName(serv reflect.Type) string {
-	vals := reflect.New(serv).MethodByName("ConfName").Call(nil)
+	vals := reflect.New(serv.Elem()).Elem().MethodByName("ConfigName").Call(nil)
 	if len(vals) != 1 {
-		panic("Invalid ConfName")
+		panic("Invalid ConfigName")
 	}
 	val := vals[0]
 	if val.Kind() != reflect.String {
-		panic("Invalid ConfName")
+		panic("Invalid ConfigName")
 	}
 	return val.String()
 }
@@ -48,7 +48,7 @@ func callInit(serv interface{}) error {
 func callFactory(factory, conf interface{}) (interface{}, error) {
 	args := make([]reflect.Value, 0, 1)
 	if conf != nil {
-		args = append(args, reflect.ValueOf(conf))
+		args = append(args, reflect.ValueOf(conf).Elem())
 	}
 
 	vals := reflect.ValueOf(factory).Call(args)

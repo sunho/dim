@@ -7,11 +7,20 @@ import (
 	"github.com/labstack/echo"
 )
 
+type PrintServiceConf struct {
+	Test string `yaml:"test"`
+}
+
 type PrintService struct {
+	test string
+}
+
+func (PrintService) ConfigName() string {
+	return "print"
 }
 
 func (p *PrintService) Print(str string) {
-	fmt.Println(str)
+	fmt.Println(p.test)
 }
 
 type LogService struct {
@@ -22,8 +31,10 @@ func (l *LogService) Log(str string) {
 	l.PrintService.Print(str)
 }
 
-func providePrintService() *PrintService {
-	return &PrintService{}
+func providePrintService(conf PrintServiceConf) *PrintService {
+	return &PrintService{
+		test: conf.Test,
+	}
 }
 
 func provideLogService() *LogService {
@@ -47,7 +58,7 @@ func main() {
 	d := dim.New()
 	d.Provide(provideLogService)
 	d.Provide(providePrintService)
-	err := d.Init("")
+	err := d.Init("config")
 	if err != nil {
 		panic(err)
 	}
