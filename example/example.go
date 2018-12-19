@@ -23,7 +23,7 @@ func (PrintService) ConfigName() string {
 }
 
 func (p *PrintService) Print(str string) {
-	fmt.Println(p.test)
+	fmt.Println(p.test, str)
 }
 
 // creator function
@@ -44,6 +44,15 @@ func (l *LogService) Log(str string) {
 	l.PrintService.Print(str)
 }
 
+type LogMiddleware struct {
+	LogService *LogService `dim:"on"`
+}
+
+func (l *LogMiddleware) Act(c echo.Context) error {
+	l.LogService.Log("Middleware")
+	return nil
+}
+
 // creator function
 func provideLogService() *LogService {
 	return &LogService{}
@@ -60,7 +69,7 @@ func (l *LogRoute) Register(g *dim.Group) {
 
 // handler
 func (l *LogRoute) get(e echo.Context) error {
-	l.LogService.Log("Hello Dim!")
+	l.LogService.Log("Route")
 	return e.String(200, "asdf")
 }
 
@@ -74,13 +83,11 @@ func main() {
 	// create service instances
 	// unmarshal yaml files from config folder
 	// and provide them to creator functions
-	err := d.Init("config")
-	if err != nil {
-		panic(err)
-	}
+	d.Init("config")
 
 	// register routes
 	d.Register(func(g *dim.Group) {
+		g.Use(&LogMiddleware{})
 		g.Route("/log", &LogRoute{})
 	})
 

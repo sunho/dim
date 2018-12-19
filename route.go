@@ -22,13 +22,24 @@ func newGroup(d *Dim, g *echo.Group) *Group {
 	}
 }
 
-func (g *Group) Route(prefix string, route Route, middleware ...echo.MiddlewareFunc) {
-	t := newGroup(g.d, g.Group.Group(prefix, middleware...))
+func (g *Group) Route(prefix string, route Route, middlewares ...Middleware) {
+	t := newGroup(g.d, g.Group.Group(prefix, middlewaresToFuncs(middlewares)...))
 	g.d.inject(route)
 	route.Register(t)
 }
 
-func (g *Group) RouteFunc(prefix string, register RegisterFunc, middleware ...echo.MiddlewareFunc) {
-	t := newGroup(g.d, g.Group.Group(prefix, middleware...))
+func (g *Group) RouteFunc(prefix string, register RegisterFunc, middlewares ...Middleware) {
+	t := newGroup(g.d, g.Group.Group(prefix, middlewaresToFuncs(middlewares)...))
 	register(t)
+}
+
+func (g *Group) Use(middlewares ...Middleware) {
+	for _, middleware := range middlewares {
+		g.d.inject(middleware)
+	}
+	g.Group.Use(middlewaresToFuncs(middlewares)...)
+}
+
+func (g *Group) UseRaw(middlewares ...echo.MiddlewareFunc) {
+	g.Group.Use(middlewares...)
 }

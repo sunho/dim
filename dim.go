@@ -23,7 +23,7 @@ func New() *Dim {
 	}
 }
 
-func (d *Dim) Init(path string) error {
+func (d *Dim) Init(path string) {
 	servs := map[reflect.Type]interface{}{}
 	for _, factory := range d.factories {
 		serv, conf := parseFactory(factory)
@@ -31,24 +31,24 @@ func (d *Dim) Init(path string) error {
 			name := getConfName(serv)
 			buf, err := ioutil.ReadFile(filepath.Join(path, name+".yaml"))
 			if err != nil {
-				return err
+				panic(err)
 			}
 
 			c := reflect.New(conf).Interface()
 			err = yaml.Unmarshal(buf, c)
 			if err != nil {
-				return err
+				panic(err)
 			}
 
 			s, err := callFactory(factory, c)
 			if err != nil {
-				return err
+				panic(err)
 			}
 			servs[serv] = s
 		} else {
 			s, err := callFactory(factory, nil)
 			if err != nil {
-				return err
+				panic(err)
 			}
 			servs[serv] = s
 		}
@@ -61,10 +61,9 @@ func (d *Dim) Init(path string) error {
 	for _, serv := range servs {
 		err := callInit(serv)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
 func (d *Dim) Register(register RegisterFunc) {
@@ -72,12 +71,14 @@ func (d *Dim) Register(register RegisterFunc) {
 	register(t)
 }
 
-func (d *Dim) Provide(factory interface{}) {
-	serv, _ := parseFactory(factory)
-	if _, ok := d.factories[serv]; ok {
-		panic("Duplicate factory func")
+func (d *Dim) Provide(factories ...interface{}) {
+	for _, factory := range factories {
+		serv, _ := parseFactory(factory)
+		if _, ok := d.factories[serv]; ok {
+			panic("Duplicate factory func")
+		}
+		d.factories[serv] = factory
 	}
-	d.factories[serv] = factory
 }
 
 func (d *Dim) Start(addr string) error {
