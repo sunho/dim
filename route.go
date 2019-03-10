@@ -39,7 +39,3 @@ func (g *Group) Use(middlewares ...Middleware) {
 	}
 	g.Group.Use(middlewaresToFuncs(middlewares)...)
 }
-
-func (g *Group) UseRaw(middlewares ...echo.MiddlewareFunc) {
-	g.Group.Use(middlewares...)
-}

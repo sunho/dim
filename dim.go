@@ -71,6 +71,10 @@ func (d *Dim) Register(register RegisterFunc) {
 	register(t)
 }
 
+// func(conf Struct) *Serv
+// func(conf Struct) (*Serv, error)
+// func (s *Serv) ConfigName() string
+// func (s *Serv) Init() error
 func (d *Dim) Provide(factories ...interface{}) {
 	for _, factory := range factories {
 		serv, _ := parseFactory(factory)
