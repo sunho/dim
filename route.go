@@ -23,12 +23,18 @@ func newGroup(d *Dim, g *echo.Group) *Group {
 }
 
 func (g *Group) Route(prefix string, route Route, middlewares ...Middleware) {
+	for _, middleware := range middlewares {
+		g.d.inject(middleware)
+	}
 	t := newGroup(g.d, g.Group.Group(prefix, middlewaresToFuncs(middlewares)...))
 	g.d.inject(route)
 	route.Register(t)
 }
 
 func (g *Group) RouteFunc(prefix string, register RegisterFunc, middlewares ...Middleware) {
+	for _, middleware := range middlewares {
+		g.d.inject(middleware)
+	}
 	t := newGroup(g.d, g.Group.Group(prefix, middlewaresToFuncs(middlewares)...))
 	register(t)
 }
