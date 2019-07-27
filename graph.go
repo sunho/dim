@@ -16,15 +16,25 @@ func newGraph(n int) *graph {
 	}
 }
 
+func (g *graph) initVisted() map[int]bool {
+	out := make(map[int]bool)
+	for i := 0; i < len(g.adjs); i++ {
+		out[i] = false
+	}
+	return out
+}
+
 func (g *graph) TopologicalSort() ([]int, error) {
 	out := []int{}
-	visted := make(map[int]bool)
+	visted := g.initVisted()
 	for i := 0; i < len(g.adjs); i++ {
-		o, err := g.tops(i, visted, make(map[int]bool))
-		if err != nil {
-			return nil, err
+		if !visted[i] {
+			o, err := g.tops(i, visted, g.initVisted())
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, o...)
 		}
-		out = append(out, o...)
 	}
 	out2 := make([]int, 0, len(out))
 	for i := len(out) - 1; i >= 0; i-- {
@@ -38,7 +48,7 @@ func (g *graph) tops(i int, visted map[int]bool, path map[int]bool) ([]int, erro
 	path[i] = true
 	out := []int{i}
 	for j := 0; j < len(g.adjs); j++ {
-		if i != j && g.adjs[i][j] {
+		if g.adjs[i][j] {
 			if path[j] {
 				return nil, errors.New("Cycle detected")
 			}

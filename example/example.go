@@ -13,9 +13,14 @@ type PrintServiceConf struct {
 	Test string `yaml:"test"`
 }
 
+func (PrintServiceConf) Default() PrintServiceConf {
+	return PrintServiceConf{
+		Test: "asdf",
+	}
+}
+
 type PrintService struct {
-	LogService *LogService `dim:"on"`
-	test       string
+	test string
 }
 
 // provide config file name
@@ -84,7 +89,7 @@ func main() {
 	// create service instances
 	// unmarshal yaml files from config folder
 	// and provide them to creator functions
-	err := d.Init("config")
+	err := d.Init("config", false)
 	if err != nil {
 		panic(err)
 	}

@@ -13,21 +13,68 @@ import (
 )
 
 type Dim struct {
-	e         *echo.Echo
-	servs     map[reflect.Type]interface{}
-	factories map[reflect.Type]interface{}
+	e           *echo.Echo
+	servs       map[reflect.Type]interface{}
+	factories   map[reflect.Type]interface{}
+	confs       map[string]interface{}
+	visitedConf map[string]bool
+	multiple    bool
 }
 
 func New() *Dim {
 	return &Dim{
-		e:         echo.New(),
-		servs:     map[reflect.Type]interface{}{},
-		factories: map[reflect.Type]interface{}{},
+		e:           echo.New(),
+		servs:       map[reflect.Type]interface{}{},
+		factories:   map[reflect.Type]interface{}{},
+		visitedConf: map[string]bool{},
 	}
 }
 
 func (d *Dim) readConfig(path, name string, typ reflect.Type) (interface{}, error) {
-	return d.readConfigMultipleFiles(path, name, typ)
+	if _, ok := d.visitedConf[name]; ok {
+		return nil, errors.New("Duplicated config name: " + name)
+	}
+	d.visitedConf[name] = true
+	if d.multiple {
+		return d.readConfigMultipleFiles(path, name, typ)
+	}
+	return d.readConfigSingleFile(path, name, typ)
+}
+
+func (d *Dim) readConfigSingleFile(path, name string, typ reflect.Type) (interface{}, error) {
+	path2 := filepath.Join(path, "config.yaml")
+	if d.confs == nil {
+		d.confs = make(map[string]interface{})
+		buf, err := ioutil.ReadFile(path2)
+		if err == nil {
+			err = yaml.Unmarshal(buf, &d.confs)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if conf, ok := d.confs[name]; ok {
+		buf, err := yaml.Marshal(conf)
+		if err != nil {
+			return nil, err
+		}
+
+		c := reflect.New(typ).Interface()
+		err = yaml.Unmarshal(buf, c)
+		if err != nil {
+			return nil, err
+		}
+
+		return c, nil
+	}
+
+	c, support := getDefaultConf(typ)
+	if !support {
+		return nil, errors.New(name + " not configured")
+	}
+	d.confs[name] = c
+	return c, nil
 }
 
 func (d *Dim) readConfigMultipleFiles(path, name string, typ reflect.Type) (interface{}, error) {
@@ -62,7 +109,8 @@ func (d *Dim) readConfigMultipleFiles(path, name string, typ reflect.Type) (inte
 	return c, nil
 }
 
-func (d *Dim) Init(path string) error {
+func (d *Dim) Init(path string, multiple bool) error {
+	d.multiple = multiple
 	servs := map[reflect.Type]interface{}{}
 	for _, factory := range d.factories {
 		serv, conf := parseFactory(factory)
@@ -83,6 +131,21 @@ func (d *Dim) Init(path string) error {
 				return err
 			}
 			servs[serv] = s
+		}
+	}
+
+	if !d.multiple && d.confs != nil {
+		path2 := filepath.Join(path, "config.yaml")
+		if _, err := os.Stat(path2); os.IsNotExist(err) {
+			buf, err := yaml.Marshal(d.confs)
+			if err != nil {
+				return err
+			}
+			err = ioutil.WriteFile(path2, buf, 0644)
+			if err != nil {
+				return err
+			}
+			log.Println(path2 + " made with the default configuration")
 		}
 	}
 

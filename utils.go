@@ -36,9 +36,16 @@ func getDefaultConf(conf reflect.Type) (interface{}, bool) {
 		if indirectType(val.Type()) != conf {
 			panic(conf.Name() + "'s Default should return a " + conf.Name())
 		}
-		return reflect.Indirect(val).Addr().Interface(), true
+		return ptr(reflect.Indirect(val)).Interface(), true
 	}
 	return nil, false
+}
+
+func ptr(v reflect.Value) reflect.Value {
+	pt := reflect.PtrTo(v.Type())
+	pv := reflect.New(pt.Elem())
+	pv.Elem().Set(v)
+	return pv
 }
 
 func getConfName(serv reflect.Type) (string, bool) {
@@ -109,5 +116,5 @@ func callFactory(factory, conf interface{}) (interface{}, error) {
 		}
 	}
 
-	return reflect.Indirect(vals[0]).Addr().Interface(), nil
+	return ptr(reflect.Indirect(vals[0])).Interface(), nil
 }
