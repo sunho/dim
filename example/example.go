@@ -14,7 +14,8 @@ type PrintServiceConf struct {
 }
 
 type PrintService struct {
-	test string
+	LogService *LogService `dim:"on"`
+	test       string
 }
 
 // provide config file name
@@ -83,7 +84,10 @@ func main() {
 	// create service instances
 	// unmarshal yaml files from config folder
 	// and provide them to creator functions
-	d.Init("config")
+	err := d.Init("config")
+	if err != nil {
+		panic(err)
+	}
 
 	// register routes
 	d.Register(func(g *dim.Group) {
