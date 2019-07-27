@@ -151,8 +151,11 @@ func callHandler(handler, context interface{}) error {
 	if t.In(0) != t2 {
 		panic("Invalid context type: " + t2.Name() + " Expected: " + t.In(0).Name())
 	}
-	out := fn.Call([]reflect.Value{c})
-	return out[0].Interface().(error)
+	out := fn.Call([]reflect.Value{c})[0].Interface()
+	if out == nil {
+		return nil
+	}
+	return out.(error)
 }
 
 func convertHandler(handler interface{}) echo.HandlerFunc {
