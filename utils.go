@@ -87,6 +87,9 @@ func callInit(serv interface{}) error {
 			panic(reflect.TypeOf(serv).Name() + "'s Init should be a void function that returns a error")
 		}
 		err := fn.Call(nil)[0].Interface()
+		if err == nil {
+			return nil
+		}
 		out, ok := err.(error)
 		if !ok {
 			panic(reflect.TypeOf(serv).Name() + "'s Init should should return a error value")
