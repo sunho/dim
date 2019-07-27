@@ -89,7 +89,7 @@ func main() {
 	// create service instances
 	// unmarshal yaml files from config folder
 	// and provide them to creator functions
-	err := d.Init("config", false)
+	err := d.Init("config", true)
 	if err != nil {
 		panic(err)
 	}

@@ -46,56 +46,35 @@ func (d *Dim) readConfigSingleFile(path, name string, typ reflect.Type) (interfa
 	if d.confs == nil {
 		d.confs = make(map[string]interface{})
 		buf, err := ioutil.ReadFile(path2)
-		if err == nil {
-			err = yaml.Unmarshal(buf, &d.confs)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if conf, ok := d.confs[name]; ok {
-		buf, err := yaml.Marshal(conf)
 		if err != nil {
 			return nil, err
 		}
-
-		c := reflect.New(typ).Interface()
-		err = yaml.Unmarshal(buf, c)
+		err = yaml.Unmarshal(buf, &d.confs)
 		if err != nil {
 			return nil, err
 		}
-
-		return c, nil
 	}
 
-	c, support := getDefaultConf(typ)
-	if !support {
+	conf, ok := d.confs[name]
+	if !ok {
 		return nil, errors.New(name + " not configured")
 	}
-	d.confs[name] = c
+	buf, err := yaml.Marshal(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	c := reflect.New(typ).Interface()
+	err = yaml.Unmarshal(buf, c)
+	if err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
 func (d *Dim) readConfigMultipleFiles(path, name string, typ reflect.Type) (interface{}, error) {
 	path2 := filepath.Join(path, name+".yaml")
-	if _, err := os.Stat(path2); os.IsNotExist(err) {
-		c, support := getDefaultConf(typ)
-		if !support {
-			return nil, errors.New(path2 + " doesn't exist")
-		}
-		buf, err := yaml.Marshal(c)
-		if err != nil {
-			return nil, err
-		}
-		err = ioutil.WriteFile(path2, buf, 0644)
-		if err != nil {
-			return nil, err
-		}
-		log.Println(path2 + " made with the default configuration")
-		return c, nil
-	}
-
 	buf, err := ioutil.ReadFile(path2)
 	if err != nil {
 		return nil, err
@@ -109,8 +88,61 @@ func (d *Dim) readConfigMultipleFiles(path, name string, typ reflect.Type) (inte
 	return c, nil
 }
 
+func (d *Dim) initialConfig(path string) error {
+	if _, err := os.Stat(filepath.Join(path, "config.yaml")); !os.IsNotExist(err) && !d.multiple {
+		return nil
+	}
+
+	confs := make(map[string]interface{})
+	for _, factory := range d.factories {
+		serv, conf := parseFactory(factory)
+		name, ok := getConfName(serv)
+		if !ok {
+			continue
+		}
+		c, support := getDefaultConf(conf)
+		if !support {
+			continue
+		}
+		if d.multiple {
+			path2 := filepath.Join(path, name+".yaml")
+			if _, err := os.Stat(path2); !os.IsNotExist(err) {
+				continue
+			}
+			buf, err := yaml.Marshal(c)
+			if err != nil {
+				return err
+			}
+			err = ioutil.WriteFile(path2, buf, 0644)
+			if err != nil {
+				return err
+			}
+			log.Println(path2 + " made with the default configuration")
+		} else {
+			confs[name] = c
+		}
+	}
+	if !d.multiple {
+		path2 := filepath.Join(path, "config.yaml")
+		buf, err := yaml.Marshal(confs)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(path2, buf, 0644)
+		if err != nil {
+			return err
+		}
+		log.Println(path2 + " made with the default configuration")
+	}
+	return nil
+}
+
 func (d *Dim) Init(path string, multiple bool) error {
 	d.multiple = multiple
+	err := d.initialConfig(path)
+	if err != nil {
+		return err
+	}
 	servs := map[reflect.Type]interface{}{}
 	for _, factory := range d.factories {
 		serv, conf := parseFactory(factory)
@@ -131,21 +163,6 @@ func (d *Dim) Init(path string, multiple bool) error {
 				return err
 			}
 			servs[serv] = s
-		}
-	}
-
-	if !d.multiple && d.confs != nil {
-		path2 := filepath.Join(path, "config.yaml")
-		if _, err := os.Stat(path2); os.IsNotExist(err) {
-			buf, err := yaml.Marshal(d.confs)
-			if err != nil {
-				return err
-			}
-			err = ioutil.WriteFile(path2, buf, 0644)
-			if err != nil {
-				return err
-			}
-			log.Println(path2 + " made with the default configuration")
 		}
 	}
 
