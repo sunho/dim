@@ -13,7 +13,7 @@ import (
 )
 
 type Dim struct {
-	e           *echo.Echo
+	E           *echo.Echo
 	servs       map[reflect.Type]interface{}
 	factories   map[reflect.Type]interface{}
 	confs       map[string]interface{}
@@ -23,7 +23,7 @@ type Dim struct {
 
 func New() *Dim {
 	return &Dim{
-		e:           echo.New(),
+		E:           echo.New(),
 		servs:       map[reflect.Type]interface{}{},
 		factories:   map[reflect.Type]interface{}{},
 		visitedConf: map[string]bool{},
@@ -200,7 +200,7 @@ func (d *Dim) Init(path string, multiple bool) error {
 }
 
 func (d *Dim) Register(register RegisterFunc) {
-	t := newGroup(d, d.e.Group(""))
+	t := newGroup(d, d.E.Group(""))
 	register(t)
 }
 
@@ -219,7 +219,7 @@ func (d *Dim) Provide(factories ...interface{}) {
 }
 
 func (d *Dim) Start(addr string) error {
-	return d.e.Start(addr)
+	return d.E.Start(addr)
 }
 
 func (d *Dim) connect(serv reflect.Type, servidx map[reflect.Type]int, g *graph) {
