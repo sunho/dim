@@ -24,6 +24,14 @@ func (g *graph) initVisted() map[int]bool {
 	return out
 }
 
+func duplicate(input map[int]bool) map[int]bool {
+	out := make(map[int]bool)
+	for k, v := range input {
+		out[k] = v
+	}
+	return out
+}
+
 func (g *graph) TopologicalSort() ([]int, error) {
 	out := []int{}
 	visted := g.initVisted()
@@ -53,7 +61,7 @@ func (g *graph) tops(i int, visted map[int]bool, path map[int]bool) ([]int, erro
 				return nil, errors.New("Cycle detected")
 			}
 			if !visted[j] {
-				o, err := g.tops(j, visted, path)
+				o, err := g.tops(j, visted, duplicate(path))
 				if err != nil {
 					return nil, err
 				}
