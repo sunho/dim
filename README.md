@@ -2,13 +2,14 @@
 
 Dim wraps echo to provide the dependecy injection for go web development.
 
+It has been used to devlop the server for (Minda)[https://github.com/sdbx/minda], a game published in Steam.
+
 # Features
 
 ## Easily configurable service
 
 The service instances are created by a function you implement. The function can take a yaml deserializable struct to configure your services. When you call Dim.Init(path), Dim will read yaml files from the path, unmarshal them as the struct parameter of your function and use them to call your function.
 
-## TODO
 
 # Examples
 
