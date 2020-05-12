@@ -6,14 +6,27 @@ It has been used to devlop the server for [Minda](https://github.com/sdbx/minda)
 
 # Features
 
-## Easily configurable service
+## Reflection based configuration
 
-The service instances are created by a function you implement. The function can take a yaml deserializable struct to configure your services. When you call Dim.Init(path), Dim will read yaml files from the path, unmarshal them as the struct parameter of your function and use them to call your function.
+Each service is configured with yaml configuration file. It eliminates the need to load configuration file 
 
+## Dependency injection to services and routes
 
-# Examples
+Dim injects services to other service as well as "route." You can explicitly specify dependencies by its fields. And, of course, Dim uses topological sorting to Init services in proper order.
 
-## Service Configuration
+# Potential improvment
+
+## Detect unused dependencies
+
+Currenlty, there's no way to detect whether the service or route doesn't use the injected services.
+
+## Shared configuration
+
+Although this limitation might be addressed by carefully designing services with [SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle), there are some cases where it's inconveninent to only use service specific configurations.
+
+It would be convenient to have a systematic way to access the shared configuration.
+
+# Example
 
 print.go
 ```go
@@ -37,6 +50,13 @@ type PrintService struct {
 func (PrintService) ConfigName() string {
 	return "print"
 }
+
+// initialize the service 
+// every depended service is initialized prior to this
+func (p *PrintService) Init() error {
+	return nil
+}
+
 
 func (p *PrintService) Print(str string) {
 	fmt.Println(p.test)
@@ -102,6 +122,7 @@ func (l *LogRoute) get(e echo.Context) error {
 }
 ```
 
+main.go
 ```go
 
 func main() {
