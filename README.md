@@ -2,7 +2,7 @@
 
 Dim wraps echo to provide the dependecy injection for go web development.
 
-It has been used to devlop the server for (Minda)[https://github.com/sdbx/minda], a game published in Steam.
+It has been used to devlop the server for [Minda](https://github.com/sdbx/minda), a game published in Steam.
 
 # Features
 
@@ -15,14 +15,13 @@ The service instances are created by a function you implement. The function can 
 
 ## Service Configuration
 
+print.go
 ```go
 package main
 
 import (
-	"dim"
+	"github.com/sunho/dim"
 	"fmt"
-
-	"github.com/labstack/echo"
 )
 
 // config struct
@@ -43,65 +42,88 @@ func (p *PrintService) Print(str string) {
 	fmt.Println(p.test)
 }
 
+
 // creator function
-// conf will be provided by Dim
-func providePrintService(conf PrintServiceConf) *PrintService {
+// Dim will read "print.yaml" and pass it by conf here.
+func ProvidePrintService(conf PrintServiceConf) *PrintService {
 	return &PrintService{
 		test: conf.Test,
 	}
 }
+```
+
+log.go
+```go
+package main
+
+import (
+	"dim"
+	"fmt"
+
+	"github.com/labstack/echo"
+)
 
 type LogService struct {
-    PrintService *PrintService `dim:"on"` // will be injected by Dim
+    PrintService *PrintService `dim:"on"` // you can specify another service as dependency
     // dim:"on" will trigger Dim to inject
 }
 
 func (l *LogService) Log(str string) {
-    // use the injected service
+    	// use the injected service
 	l.PrintService.Print(str)
 }
 
 // creator function
-func provideLogService() *LogService {
+func ProvideLogService() *LogService {
 	return &LogService{}
 }
 
+```
+
+routes.go
+```go
+package main
+
+// you will primarily use injected services in the API routes
 type LogRoute struct {
-	LogService *LogService `dim:"on"`
+	LogService *LogService `dim:"on"` // specify dependency
 }
 
-// register routes
+// when you add this route by calling Dim.Route
+// it will call this function to register sub-routes
 func (l *LogRoute) Register(g *dim.Group) {
-	g.GET("/", l.get)
+	g.GET("/", l.get) // root of this route
 }
 
 // handler
 func (l *LogRoute) get(e echo.Context) error {
-	l.LogService.Log("Hello Dim!")
+	l.LogService.Log("Hello Dim!") // use injected service
 	return e.String(200, "asdf")
 }
+```
+
+```go
 
 func main() {
     d := dim.New()
 
     // register service creator functions
-	d.Provide(provideLogService)
-    d.Provide(providePrintService)
+    d.Provide(ProvideLogService)
+    d.Provide(ProvidePrintService)
 
     // create service instances
-    // unmarshal yaml files from config folder 
-    // and provide them to creator functions
+    // read yaml files from config folder 
     err := d.Init("config")
-	if err != nil {
-		panic(err)
+    if err != nil {
+    	panic(err)
     }
 
     // register routes
-	d.Register(func(g *dim.Group) {
-		g.Route("/log", &LogRoute{})
+    d.Register(func(g *dim.Group) {
+    	g.Route("/log", &LogRoute{}) // this is the route that Dim will inject dependencies into
     })
 
     // start http server
-	d.Start(":8080")
+    d.Start(":8080")
 }
 ```
