@@ -6,7 +6,7 @@ It has been used to devlop the server for [Minda](https://github.com/sdbx/minda)
 
 # Features
 
-## Reflection based configuration
+## Automatic service specific configuration
 
 Each service is configured with service-specific yaml configuration file.
 
