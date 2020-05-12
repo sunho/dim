@@ -8,7 +8,7 @@ It has been used to devlop the server for [Minda](https://github.com/sdbx/minda)
 
 ## Reflection based configuration
 
-Each service is configured with yaml configuration file. It eliminates the need to load configuration file 
+Each service is configured with service-specific yaml configuration file.
 
 ## Dependency injection to services and routes
 
