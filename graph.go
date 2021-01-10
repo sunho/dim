@@ -1,6 +1,8 @@
 package dim
 
-import "errors"
+import (
+	"errors"
+)
 
 type graph struct {
 	adjs [][]bool
@@ -44,17 +46,13 @@ func (g *graph) TopologicalSort() ([]int, error) {
 			out = append(out, o...)
 		}
 	}
-	out2 := make([]int, 0, len(out))
-	for i := len(out) - 1; i >= 0; i-- {
-		out2 = append(out2, out[i])
-	}
-	return out2, nil
+	return out, nil
 }
 
 func (g *graph) tops(i int, visted map[int]bool, path map[int]bool) ([]int, error) {
 	visted[i] = true
 	path[i] = true
-	out := []int{i}
+	out := []int{}
 	for j := 0; j < len(g.adjs); j++ {
 		if g.adjs[i][j] {
 			if path[j] {
@@ -69,6 +67,7 @@ func (g *graph) tops(i int, visted map[int]bool, path map[int]bool) ([]int, erro
 			}
 		}
 	}
+	out = append(out, i)
 	return out, nil
 }
 
